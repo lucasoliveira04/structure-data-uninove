@@ -60,6 +60,7 @@ void list_append(LinkedList *list, int value) {
     list->size++;
 }
 
+// Search O(n)
 int search_value(const LinkedList *list, int value) {
     Node *curr = list->head;
 
@@ -80,6 +81,7 @@ int search_value(const LinkedList *list, int value) {
     }
 }
 
+// Delete value O(n)
 void delete_value(LinkedList *list, int value) {
     Node *curr = list->head;
     Node *prev = NULL;
