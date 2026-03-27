@@ -1,0 +1,73 @@
+name: Update README
+
+on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "README.md"
+
+jobs:
+  update-readme:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 2
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Check and update README with Groq
+        env:
+          GROQ_API_KEY: ${{ secrets.GROQ_API_KEY }}
+        run: |
+          DIFF=$(git diff HEAD~1 HEAD --name-only)
+          README=$(cat README.md)
+          STRUCTURE=$(find . -not -path './.git/*' \( -name "*.yml" -o -name "*.md" -o -name "*.sh" \) | sort | tr '\n' ' ')
+
+          PAYLOAD=$(jq -n \
+            --arg diff "$DIFF" \
+            --arg readme "$README" \
+            --arg structure "$STRUCTURE" \
+            '{
+              model: "llama-3.1-8b-instant",
+              messages: [
+                {
+                  role: "system",
+                  content: "You are a technical documentation assistant. Analyze the changed files and the current README. If the README needs to be updated to reflect the changes (new services, new scripts, new configs, structural changes), return ONLY the complete updated README in markdown. If no update is needed, return only: NO_UPDATE. Never explain yourself, never add comments."
+                },
+                {
+                  role: "user",
+                  content: ("Changed files:\n" + $diff + "\n\nRepo structure:\n" + $structure + "\n\nCurrent README:\n" + $readme)
+                }
+              ]
+            }')
+
+          RESPONSE=$(curl -s https://api.groq.com/openai/v1/chat/completions \
+            -H "Authorization: Bearer $GROQ_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d "$PAYLOAD")
+
+          echo "API Response: $RESPONSE"
+
+          AI_MSG=$(echo "$RESPONSE" | jq -r '.choices[0].message.content')
+
+          echo "AI Message: $AI_MSG"
+
+          if [ "$AI_MSG" = "NO_UPDATE" ] || [ -z "$AI_MSG" ] || [ "$AI_MSG" = "null" ]; then
+            echo "✅ README is up to date."
+            exit 0
+          fi
+
+          echo "$AI_MSG" > README.md
+
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add README.md
+          git commit -m "docs: update README"
+          git push
+
+          echo "✅ README updated successfully!"
