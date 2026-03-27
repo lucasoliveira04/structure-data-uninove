@@ -8,6 +8,7 @@ typedef struct Node {
 
 typedef struct {
     Node *head;
+    Node *tail;
     int size;
 } LinkedList;
 
@@ -18,6 +19,7 @@ LinkedList *list_create() {
     }
 
     list->head = NULL;
+    list->tail = NULL;
     list->size = 0;
     return list;
 }
@@ -32,9 +34,15 @@ void list_prepend(LinkedList *list, int value) {
     node->value = value;
     node->next = list->head;
     list->head = node;
+
+    if (!list->tail) {
+        list->tail = node;
+    }
+
     list->size++;
 }
 
+// Print O(n)
 void list_print(const LinkedList *list) {
     Node *curr = list->head;
 
@@ -45,24 +53,19 @@ void list_print(const LinkedList *list) {
     printf("NULL\n");
 }
 
+// Append O(1)
 void list_append(LinkedList *list, int value) {
     Node *node = malloc(sizeof(Node));
-
-    if (!node) {
-        return;
-    }
 
     node->value = value;
     node->next = NULL;
 
     if (!list->head) {
         list->head = node;
+        list->tail = node;
     } else {
-        Node *curr = list->head;
-        while (curr->next) {
-            curr = curr->next;
-        }
-        curr->next = node;
+        list->tail->next = node;
+        list->tail = node;
     }
 
     list->size++;
