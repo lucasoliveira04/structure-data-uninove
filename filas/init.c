@@ -1,4 +1,5 @@
 #include <stdio.h>
+#include <stdlib.h>
 
 #define MAX_SIZE_QUEUE 100
 
@@ -27,13 +28,21 @@ void queueUp(Queue *queue, int value) {
         return;
     }
 
-    // Primeiro elemento
     if (isEmpty(queue)) {
         queue->head = 0;
     }
 
     queue->tail++;
     queue->data[queue->tail] = value;
+}
+
+
+int getFirstElement(Queue *queue) {
+  return queue->data[queue->head];
+}
+
+int getLastElement(Queue *queue) {
+  return queue->data[queue->tail];
 }
 
 void printQueue(Queue *queue) {
@@ -56,11 +65,18 @@ int main() {
 
     startQueue(&queue);
 
-    queueUp(&queue, 10);
-    queueUp(&queue, 20);
-    queueUp(&queue, 30);
+    int filaNums[] = {10, 3, 4, 5, 6, 7, 8, 9, 10, 21, 23, 12, 30};
+
+    int tamanho = sizeof(filaNums) / sizeof(filaNums[0]);
+
+    for (int i = 0; i < tamanho; i++) {
+        queueUp(&queue, filaNums[i]);
+    }
 
     printQueue(&queue);
+    
+    printf("%d", getFirstElement(&queue));
+    printf("\n%d", getLastElement(&queue));
 
     return 0;
 }
